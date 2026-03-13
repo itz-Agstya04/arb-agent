@@ -1,14 +1,12 @@
-import { cancel, intro, isCancel, outro, spinner, text } from "@clack/prompts";
+import { cancel, intro, outro, spinner } from "@clack/prompts";
+import { MarketScannerTool } from "./tools/market_scanner";
 import {
 	AgentBuilder,
 	type EnhancedRunner,
 	InMemorySessionService,
-	McpNearIntents,
 } from "@iqai/adk";
-import { blue, bold, cyan, dim, green, magenta, red, yellow } from "colorette";
+import { bold, cyan, dim, green, red } from "colorette";
 import { config } from "dotenv";
-import { marked } from "marked";
-import { markedTerminal } from "marked-terminal";
 import {
 	AGENT_DESCRIPTION,
 	AGENT_INSTRUCTIONS,
@@ -16,144 +14,132 @@ import {
 	OUTRO_TEXT,
 } from "./prompts";
 import { NearTransferTool } from "./tools/near-transfer";
+import * as fs from "fs";
 
 config();
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-marked.use(markedTerminal() as any);
+const STATE_FILE = "./state.json";
 
-// Main function
+function saveState(data: any) {
+	const current = fs.existsSync(STATE_FILE)
+		? JSON.parse(fs.readFileSync(STATE_FILE, "utf-8"))
+		: {};
+	fs.writeFileSync(
+		STATE_FILE,
+		JSON.stringify(
+			{ ...current, ...data, lastUpdated: new Date().toISOString() },
+			null,
+			2
+		)
+	);
+}
+
 async function main() {
 	console.clear();
 	intro(bold(cyan(INTRO_TEXT.title)));
+
+	saveState({ status: "Starting", totalProfit: 0, tradeCount: 0, trades: [] });
+
 	const runner = await initializeAgent();
-	await loadTokenData(runner);
-	printReady();
-	await mainLoop(runner);
-	outro(bold(green(OUTRO_TEXT)));
-}
 
-async function mainLoop(runner: EnhancedRunner) {
+	console.log(`\n${dim("━".repeat(60))}`);
+	console.log(bold(green("🎯 Agent running autonomously every 60 seconds")));
+	console.log(dim("💡 IQ AI ADK-TS · GPT-4o Mini · NEAR Intents · $ARB"));
+	console.log(dim("💬 Press Ctrl+C to stop"));
+	console.log(`${dim("━".repeat(60))}\n`);
+
+	let cycle = 0;
+
 	while (true) {
-		const userInput = await text({
-			message: bold(yellow("💬 You:")),
-			placeholder: "What would you like to swap today?",
-			validate: (value) => {
-				if (!value || value.trim().length === 0) {
-					return "Please enter a message";
-				}
-				return undefined;
-			},
-		});
+		cycle++;
+		console.log(`\n${"─".repeat(48)}`);
+		console.log(`  Cycle ${cycle} · ${new Date().toLocaleTimeString()}`);
+		console.log(`${"─".repeat(48)}`);
 
-		if (isCancel(userInput)) {
-			cancel("Cancelled.");
-			process.exit(0);
-		}
-
-		if (typeof userInput !== "string") continue;
-
-		const input = userInput.trim();
-		if (input.toLowerCase() === "quit" || input.toLowerCase() === "exit") {
-			break;
-		}
+		saveState({ status: "Analyzing" });
 
 		const s = spinner();
-		s.start(magenta("🤔 Processing your request..."));
+		s.start(cyan("🔍 Scanning markets..."));
 
 		try {
-			const response = await runner.ask(input);
+			const response = await runner.ask(
+				"Call the fetch_market_prices tool RIGHT NOW. Do not use general knowledge. Only use the tool result. Then give your decision in the exact format specified."
+			);
+
 			s.stop();
-			if (response) {
-				console.log(`\n${bold(cyan("🤖 Agent:"))}`);
-				console.log(`${termParsedMd(response)}\n`);
+
+			if (response && response.trim().length > 0) {
+				console.log(`\n${bold(cyan("🤖 Agent Decision:"))}`);
+				console.log(response + "\n");
+
+				const decision = response.includes("DECISION: EXECUTE") ? "EXECUTE" : "SKIP";
+				const confidence = response.includes("HIGH") ? "HIGH" : response.includes("MEDIUM") ? "MEDIUM" : "LOW";
+				const reasoningMatch = response.match(/REASONING:\s*(.+)/);
+				const reasoning = reasoningMatch ? reasoningMatch[1].trim() : "No reasoning provided";
+				const profitMatch = response.match(/NET PROFIT:\s*\$?([\d.]+)/);
+				const profit = profitMatch ? parseFloat(profitMatch[1]) : 0;
+
+				const current = fs.existsSync(STATE_FILE)
+					? JSON.parse(fs.readFileSync(STATE_FILE, "utf-8"))
+					: { totalProfit: 0, tradeCount: 0, trades: [] };
+
+				if (decision === "EXECUTE") {
+					const trades = [
+						{ time: new Date().toLocaleTimeString(), profit, confidence, reasoning },
+						...(current.trades || [])
+					].slice(0, 20);
+
+					const totalProfit = parseFloat(((current.totalProfit || 0) + profit).toFixed(2));
+					const tradeCount = (current.tradeCount || 0) + 1;
+
+					saveState({ status: "Watching", lastDecision: decision, lastConfidence: confidence, lastReasoning: reasoning, totalProfit, tradeCount, trades });
+					console.log(bold(green(`  ✅ Trade executed · Profit: $${profit} · Total: $${totalProfit}`)));
+				} else {
+					saveState({ status: "Watching", lastDecision: decision, lastConfidence: confidence, lastReasoning: reasoning });
+				}
 			} else {
-				console.log(`\n${bold(red("❌ No response received"))}\n`);
+				console.log(`\n${bold(cyan("🤖 Agent:"))} No response\n`);
+				saveState({ status: "Watching" });
 			}
 		} catch (error) {
 			s.stop();
-			console.error(
-				`\n${bold(red("❌ Error:"))} ${error instanceof Error ? error.message : "Unknown error"}\n`,
-			);
+			console.error(`\n${bold(red("❌ Error:"))} ${error instanceof Error ? error.message : "Unknown error"}\n`);
+			saveState({ status: "Error" });
 		}
+
+		console.log(dim(`  Next cycle in 12 seconds...`));
+		await new Promise((r) => setTimeout(r, 12000));
 	}
 }
 
 async function initializeAgent(): Promise<EnhancedRunner> {
-	return withSpinner(
-		cyan("🔧 Initializing agent..."),
-		green("✅ Agent created"),
-		async () => {
-			const toolset = McpNearIntents({
-				env: {
-					NEAR_SWAP_JWT_TOKEN: process.env.NEAR_SWAP_JWT_TOKEN,
-				},
-			});
-			const nearTransferTool = new NearTransferTool();
-			const tools = await toolset.getTools();
-
-			const { runner } = await AgentBuilder.create("near_swap_agent")
-				.withModel("gpt-4o-mini")
-				.withDescription(AGENT_DESCRIPTION)
-				.withInstruction(AGENT_INSTRUCTIONS)
-				.withTools(...tools, nearTransferTool)
-				.withSession(new InMemorySessionService())
-				.build();
-
-			return runner;
-		},
-	);
-}
-
-async function loadTokenData(runner: EnhancedRunner) {
-	return withSpinner(
-		blue("🔍 Loading token data..."),
-		green("✅ Ready to swap!"),
-		async () => {
-			await runner.ask(
-				"Call the GET_NEAR_SWAP_TOKENS tool and remember the data from this tool call for future use",
-			);
-		},
-	);
-}
-
-function printReady() {
-	console.log(`\n${dim("━".repeat(60))}`);
-	console.log(bold(green("🎯 NEAR intents Agent Ready")));
-	console.log(dim("💡 Ask me about token swaps, prices, or DeFi operations"));
-	console.log(dim("💬 Type 'quit' or 'exit' to end the conversation"));
-	console.log(`${dim("━".repeat(60))}\n`);
-}
-
-const termParsedMd = (markdownString: string) => marked.parse(markdownString);
-
-async function withSpinner<T>(
-	startMessage: string,
-	successMessage: string,
-	fn: () => Promise<T>,
-): Promise<T> {
 	const s = spinner();
-	s.start(startMessage);
+	s.start(cyan("🔧 Initializing agent on IQ AI ADK-TS..."));
 	try {
-		const result = await fn();
-		s.stop(successMessage);
-		return result;
+		const { runner } = await AgentBuilder.create("cross_chain_arb_agent")
+			.withModel("gemini-2.0-flash")
+			.withDescription(AGENT_DESCRIPTION)
+			.withInstruction(AGENT_INSTRUCTIONS)
+			.withTools(new MarketScannerTool(), new NearTransferTool())
+			.withSession(new InMemorySessionService())
+			.build();
+
+		s.stop(green("✅ Agent initialized on IQ AI ADK-TS"));
+		return runner;
 	} catch (error) {
 		s.stop();
 		throw error;
 	}
 }
 
-// Handle Ctrl+C gracefully
 process.on("SIGINT", () => {
 	console.log("\n");
-	cancel("Cancelled.");
+	saveState({ status: "Stopped" });
+	outro(bold(green(OUTRO_TEXT)));
 	process.exit(0);
 });
 
 main().catch((error) => {
-	console.error(
-		`\n${bold(red("❌ Fatal error:"))} ${error instanceof Error ? error.message : "Unknown error"}\n`,
-	);
+	console.error(`\n${bold(red("❌ Fatal error:"))} ${error instanceof Error ? error.message : "Unknown error"}\n`);
 	process.exit(1);
 });

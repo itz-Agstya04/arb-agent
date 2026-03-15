@@ -273,15 +273,15 @@ This project demonstrates:
 
 # 📚 Tech Stack
 
-| Technology       | Purpose          |
-| ---------------- | ---------------- |
-| IQ AI ADK-TS     | Agent framework  |
-| Gemini 2.0 Flash | AI reasoning     |
-| NEAR Intents     | Swap execution   |
-| Ref Finance      | NEAR price feeds |
-| Binance API      | ETH market price |
-| Next.js          | Dashboard        |
-| TypeScript       | Language         |
+| Technology               | Purpose          |
+| ------------------       | ---------------- |
+| IQ AI ADK-TS             | Agent framework  |
+| Gemini 3.0 Flash preview | AI reasoning     |
+| NEAR Intents             | Swap execution   |
+| Ref Finance              | NEAR price feeds |
+| Binance API              | ETH market price |
+| Next.js                  | Dashboard        |
+| TypeScript               | Language         |
 
 ---
 

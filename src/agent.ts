@@ -25,7 +25,7 @@ async function main() {
 	const priceMonitor = new LlmAgent({
 		name: "price_monitor",
 		description: "Monitors prices and calculates arbitrage opportunities",
-		model: "gemini-2.5-flash", // ✅ updated
+		model: "gemini-3-flash-preview", // ✅ updated
 		tools: [
 			new FetchEthPriceTool(),
 			new FetchNearPriceTool(),
@@ -45,7 +45,7 @@ Return spread and profit.
 	const tradeReasoner = new LlmAgent({
 		name: "trade_reasoner",
 		description: "Decides whether to execute arbitrage trades",
-		model: "gemini-2.5-flash", // ✅ updated
+		model: "gemini-3-flash-preview", // ✅ updated
 		instruction: `
 You are a DeFi arbitrage strategist.
 Input will contain spread and net profit.
@@ -68,7 +68,7 @@ REASONING: one short sentence
 	const tradeExecutor = new LlmAgent({
 		name: "trade_executor",
 		description: "Executes approved arbitrage trades",
-		model: "gemini-2.5-flash", // ✅ updated
+		model: "gemini-3-flash-preview", // ✅ updated
 		tools: [new NearIntentsSwapTool()],
 		instruction: `
 If trade_reasoner says EXECUTE:

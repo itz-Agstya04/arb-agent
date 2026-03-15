@@ -5,6 +5,11 @@ import { z } from "zod";
 
 const STATE_FILE = "./state.json";
 
+// Cache CoinGecko price to prevent free-tier rate limits.
+let cachedEthPrice: number | null = null;
+let lastEthFetch = 0;
+const ETH_CACHE_MS = 5 * 60 * 1000; // 5 minutes
+
 function saveState(data: Record<string, unknown>) {
 	const current = fs.existsSync(STATE_FILE)
 		? JSON.parse(fs.readFileSync(STATE_FILE, "utf-8"))
@@ -30,14 +35,35 @@ export class MarketScannerTool extends BaseTool {
 		let ethPrice = 3200;
 		let nearEthPrice = 3200;
 
-		try {
-			const res = await axios.get(
-				"https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
-				{ timeout: 8000 },
-			);
-			ethPrice = res.data.ethereum.usd;
-		} catch {
-			console.log("  CoinGecko unavailable");
+		const now = Date.now();
+		if (cachedEthPrice && now - lastEthFetch < ETH_CACHE_MS) {
+			ethPrice = cachedEthPrice;
+		} else {
+			try {
+				// Use Binance free public API for ETH price (avoids CoinGecko rate limits)
+				const res = await axios.get(
+					"https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT",
+					{ timeout: 8000 },
+				);
+				ethPrice = Number.parseFloat(res.data.price);
+				cachedEthPrice = ethPrice;
+				lastEthFetch = now;
+			} catch (err: unknown) {
+				const msg =
+					err && typeof err === "object" && "message" in err
+						? (err as any).message
+						: String(err);
+				const status =
+					err && typeof err === "object" && "response" in err
+						? (err as any).response?.status
+						: undefined;
+				console.log(
+					"  Binance price fetch unavailable (using cache/fallback)",
+					status ? `(status ${status})` : "",
+					msg ? `- ${msg}` : "",
+				);
+				ethPrice = cachedEthPrice ?? ethPrice;
+			}
 		}
 
 		try {

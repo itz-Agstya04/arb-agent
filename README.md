@@ -9,7 +9,7 @@
 
 ---
 
-# 🧠 What is ARB Agent?
+#  What is ARB Agent?
 
 ARB Agent is a fully autonomous AI agent that:
 
@@ -21,7 +21,7 @@ ARB Agent is a fully autonomous AI agent that:
 
 ---
 
-# 🏗️ Architecture
+#  Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -46,7 +46,7 @@ ARB Agent is a fully autonomous AI agent that:
 
 ---
 
-# ⚙️ Agent Pipeline (ADK-TS Sequential Agent)
+#  Agent Pipeline (ADK-TS Sequential Agent)
 
 ### Price Monitor
 
@@ -84,22 +84,22 @@ Executes swap using **NEAR Intents 3-step flow**
 
 ---
 
-# ✨ Features
+#  Features
 
-* ✅ **Fully autonomous** — runs 24/7
-* ✅ **Multi-chain monitoring** — NEAR, Arbitrum, Base
-* ✅ **Real price feeds** — Binance + Ref Finance
-* ✅ **Deterministic profit math** — no hallucinated calculations
-* ✅ **AI reasoning engine** — Gemini explains every decision
-* ✅ **NEAR Intents execution** — real DeFi swaps
-* ✅ **Live dashboard** — beautiful Next.js interface
-* ✅ **User-friendly onboarding**
+*  **Fully autonomous** — runs 24/7
+*  **Multi-chain monitoring** — NEAR, Arbitrum, Base
+*  **Real price feeds** — Binance + Ref Finance
+*  **Deterministic profit math** — no hallucinated calculations
+*  **AI reasoning engine** — Gemini explains every decision
+*  **NEAR Intents execution** — real DeFi swaps
+*  **Live dashboard** — beautiful Next.js interface
+*  **User-friendly onboarding**
 
 ---
 
-# 🚀 Quick Start
+#  Quick Start
 
-## 1️⃣ Clone Repository
+##  Clone Repository
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/arb-agent.git
@@ -108,7 +108,7 @@ cd arb-agent
 
 ---
 
-## 2️⃣ Install Dependencies
+##  Install Dependencies
 
 ```bash
 pnpm install
@@ -116,7 +116,7 @@ pnpm install
 
 ---
 
-## 3️⃣ Setup Environment Variables
+##  Setup Environment Variables
 
 ```bash
 cp .env.example .env
@@ -132,7 +132,7 @@ USER_ACCOUNT_KEY=ed25519:your_private_key_here
 
 ---
 
-## 4️⃣ Run Agent
+##  Run Agent
 
 ```bash
 pnpm dev
@@ -140,7 +140,7 @@ pnpm dev
 
 ---
 
-## 5️⃣ Run Dashboard
+##  Run Dashboard
 
 ```bash
 cd dashboard
@@ -155,7 +155,7 @@ http://localhost:3003
 
 ---
 
-# ⚙️ Environment Variables
+#  Environment Variables
 
 | Variable         | Required | Description      |
 | ---------------- | -------- | ---------------- |
@@ -165,7 +165,7 @@ http://localhost:3003
 
 ---
 
-# 📊 How It Works
+#  How It Works
 
 ## Step 1 — Price Detection
 
@@ -215,21 +215,21 @@ Executed using **NEAR Intents 3-step flow**
 
 ---
 
-# 🖥 Dashboard
+#  Dashboard
 
 The dashboard displays:
 
-* 💰 Total earnings
-* 📊 Win rate
-* 📈 Earnings over time
-* 🔴 Live ETH prices
-* 🎯 Opportunity detection
-* 📋 Trade history
-* ⚙️ Risk settings
+*  Total earnings
+*  Win rate
+*  Earnings over time
+*  Live ETH prices
+*  Opportunity detection
+*  Trade history
+*  Risk settings
 
 ---
 
-# 🛠 Development
+#  Development
 
 Run agent:
 
@@ -257,7 +257,7 @@ pnpm lint
 
 ---
 
-# 🏆 Built For
+#  Built For
 
 **Electrothon 8.0 — IQ AI Agent Track**
 
@@ -271,7 +271,7 @@ This project demonstrates:
 
 ---
 
-# 📚 Tech Stack
+#  Tech Stack
 
 | Technology               | Purpose          |
 | ------------------       | ---------------- |
@@ -285,13 +285,13 @@ This project demonstrates:
 
 ---
 
-# 📄 License
+#  License
 
 MIT License — see `LICENSE` for details.
 
 ---
 
-# 🔗 Links
+#  Links
 
 ADK-TS Docs
 https://adk.iqai.com
